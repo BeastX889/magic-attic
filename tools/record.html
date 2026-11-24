@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#111}iframe{border:0;display:block}</style></head><body>
+<script>
+// Preview-video recorder: record.html?w=960&h=540&level=7&secs=17&name=landscape.webm
+// Loads the game in a fixed-size iframe, auto-finds items, records the canvas, POSTs the webm to /<name>.
+const q = new URLSearchParams(location.search);
+const W = +q.get('w') || 960, H = +q.get('h') || 540, LEVEL = +q.get('level') || 7, SECS = +q.get('secs') || 17, NAME = q.get('name') || 'clip.webm';
+localStorage.setItem('lumio-hidden-attic-v1', JSON.stringify({ v: 1, level: LEVEL, coins: 340, boost: { hint: 3, freeze: 2, time: 2 }, muted: true, stars: {}, mice: [] }));
+const f = document.createElement('iframe'); f.width = W; f.height = H; f.src = '../index.html'; document.body.appendChild(f);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+window.done = false;
+f.onload = async () => {
+  await sleep(2500);
+  const cw = f.contentWindow, game = await cw.eval(`import('${new URL('src/game.js', cw.location.href)}')`);
+  const cv = cw.document.getElementById('game');
+  const rec = new MediaRecorder(cv.captureStream(30), { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 12e6 });
+  const chunks = []; rec.ondataavailable = e => chunks.push(e.data);
+  rec.start(); const t0 = performance.now();
+  await sleep(1800);
+  let k = 0;
+  while (performance.now() - t0 < SECS * 1000 - 1500) {
+    const G = game.G;
+    if (G && G.state === 'play') {
+      const left = game.remaining();
+      if (k === 2 && !G.mouseFound) { const m = G.items.find(i => i.gold); m && game.tap(m.x, m.y); }
+      else if (left.length) { const it = G.byId.get(left[0]); game.tap(it.x, it.y); }
+      k++;
+    }
+    await sleep(1150);
+  }
+  await sleep(Math.max(0, SECS * 1000 - (performance.now() - t0)));
+  rec.stop(); await new Promise(r => rec.onstop = r);
+  await fetch('/' + NAME, { method: 'POST', body: new Blob(chunks, { type: 'video/webm' }) });
+  window.done = true; document.title = 'done';
+};
+</script></body></html>

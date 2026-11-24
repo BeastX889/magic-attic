@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#3a2a5a">
+<canvas id="c" width="1200" height="760"></canvas>
+<script type="module">
+import { drawObject, OBJECT_NAMES } from '../src/objects.js';
+const g = document.getElementById('c').getContext('2d');
+Object.keys(OBJECT_NAMES).forEach((k, i) => {
+  const x = (i % 10) * 120, y = Math.floor(i / 10) * 150;
+  g.save(); g.translate(x + 10, y + 10); drawObject(g, 100, k); g.restore();
+  g.fillStyle = '#fff'; g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText(OBJECT_NAMES[k], x + 60, y + 128);
+});
+</script>
